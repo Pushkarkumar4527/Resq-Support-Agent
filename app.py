@@ -26,22 +26,40 @@ css = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
+/* Main background matching the deep midnight blue to black gradient */
 .stApp {
     background: linear-gradient(135deg, #0f172a 0%, #000000 100%);
     color: #e2e8f0;
 }
+/* Modern luxury serif for headers */
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
     color: #f8fafc;
 }
+/* Chat message bubbles */
 .stChatMessage {
     background-color: rgba(30, 41, 59, 0.5) !important;
     border-radius: 10px;
     padding: 15px;
 }
+/* Clean up the chat input box */
+.stChatInputContainer {
+    border-radius: 12px;
+    border: 1px solid #1e293b;
+}
 </style>
 """
 st.markdown(css, unsafe_allow_html=True)
+
+# --- Sidebar Metadata ---
+with st.sidebar:
+    st.title("🛡️ ResQ System")
+    st.markdown("---")
+    st.write("**Architecture:** LangChain + RAG")
+    st.write("**Database:** SQLite3")
+    st.write("**LLM:** Gemini 2.5 Flash")
+    st.markdown("---")
+    st.caption("Engineered by Pushkar Kumar")
 
 st.title("ResQ: Support Agent with Actions")
 
@@ -74,7 +92,7 @@ def create_support_ticket(user_id: str, issue_description: str) -> str:
     """
     timestamp = datetime.now().isoformat()
     
-    # 1. Connect to the SQLite database (this automatically creates tickets.db if it doesn't exist)
+    # 1. Connect to the SQLite database
     conn = sqlite3.connect('tickets.db')
     cursor = conn.cursor()
     
@@ -88,13 +106,13 @@ def create_support_ticket(user_id: str, issue_description: str) -> str:
         )
     ''')
     
-    # 3. Insert the new ticket into the database securely using parameterized queries
+    # 3. Insert the new ticket securely
     cursor.execute('''
         INSERT INTO support_tickets (user_id, issue_description, timestamp)
         VALUES (?, ?, ?)
     ''', (user_id, issue_description, timestamp))
     
-    # 4. Commit the transaction and close the connection
+    # 4. Commit the transaction and close
     conn.commit()
     conn.close()
         
@@ -132,13 +150,13 @@ if "pending_action" not in st.session_state:
 if "current_input" not in st.session_state:
     st.session_state.current_input = ""
 
-# --- Display Chat History ---
+# --- Display Chat History (With Custom Avatars) ---
 for msg in st.session_state.chat_history:
     if isinstance(msg, HumanMessage):
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar="👤"):
             st.write(msg.content)
     elif isinstance(msg, AIMessage):
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="🛡️"):
             st.write(msg.content)
 
 def get_tool_result(action: AgentAction):
@@ -187,7 +205,6 @@ def execute_agent_step(user_input):
 if st.session_state.pending_action:
     action = st.session_state.pending_action
     
-    # We display the warning box inside an expander or block so it sits cleanly below the chat
     st.warning(f"⚠️ **Guardrail Intercept:** The agent is attempting to perform a state-changing action:\n\n"
                f"**Action:** Create Support Ticket\n"
                f"**User ID:** {action.tool_input.get('user_id', 'Unknown')}\n"
@@ -196,11 +213,14 @@ if st.session_state.pending_action:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Confirm Ticket Creation", type="primary"):
-            with st.spinner("Executing action..."):
+            # Upgraded Status Spinner
+            with st.spinner("Executing transaction in SQLite..."):
                 tool_result = get_tool_result(action)
+                # Toast Notification
+                st.toast("✅ Ticket saved to SQLite database!", icon="🎉")
+                
                 st.session_state.intermediate_steps.append((action, tool_result))
                 st.session_state.pending_action = None
-                # Use the input that originally triggered this action
                 execute_agent_step(st.session_state.current_input)
             
     with col2:
@@ -212,15 +232,15 @@ if st.session_state.pending_action:
 else:
     # --- Chat Input ---
     if prompt := st.chat_input("How can I help you today?"):
-        # Explicitly clear out any residual state to avoid cross-turn corruption
         st.session_state.intermediate_steps = []
         st.session_state.pending_action = None
         
-        # Display the prompt immediately
-        with st.chat_message("user"):
+        # Display the prompt immediately with Avatar
+        with st.chat_message("user", avatar="👤"):
             st.write(prompt)
             
         st.session_state.current_input = prompt
         
-        with st.spinner("Thinking..."):
+        # Upgraded Thinking Spinner
+        with st.spinner("Routing query & analyzing context..."):
             execute_agent_step(prompt)
