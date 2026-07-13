@@ -1,0 +1,10 @@
+streamlit==1.36.0
+langchain==0.2.6
+langchain-core==0.2.11
+langchain-community==0.2.6
+langchain-google-genai==1.0.6
+chromadb==0.5.3
+sentence-transformers==3.0.1
+langchain-huggingface==0.0.3
+langchain-chroma==0.1.1
+python-dotenv==1.0.1
