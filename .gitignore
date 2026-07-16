@@ -1,4 +1,11 @@
+# Security
 .env
-.streamlit/
+
+# Databases & Memory
+chroma_db/
 tickets.db
+
+# Python Cache & Temp Files
 __pycache__/
+*.pyc
+temp_*
